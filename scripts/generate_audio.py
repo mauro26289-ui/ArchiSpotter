@@ -22,6 +22,7 @@ def main():
     ap.add_argument("--input", default=str(ROOT / "narrations" / "scripts.json"))
     ap.add_argument("--output", default=str(ROOT / "audio"))
     ap.add_argument("--only", default="", help="Optional monument id")
+    ap.add_argument("--language", choices=("all", "en", "es", "it"), default="all", help="Only generate one language, or all")
     ap.add_argument("--force", action="store_true", help="Regenerate existing files (costs credits)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
@@ -38,6 +39,8 @@ def main():
         if args.only and slug != args.only:
             continue
         for lang, voice in VOICES.items():
+            if args.language != "all" and lang != args.language:
+                continue
             narrative = monument.get("narrations", {}).get(lang, "").strip()
             if not narrative:
                 continue
