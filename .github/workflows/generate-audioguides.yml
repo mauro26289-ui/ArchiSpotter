@@ -4,11 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       monument_id:
-        description: 'Monument ID, e.g. colosseum; leave blank for all available scripts'
+        description: 'Monument ID (e.g. pantheon); leave blank for all scripts'
         required: false
         type: string
+      language:
+        description: 'Language to generate'
+        required: true
+        type: choice
+        default: it
+        options:
+          - it
+          - es
+          - en
+          - all
       dry_run:
-        description: 'Preview without using ElevenLabs credits'
+        description: 'Preview without spending ElevenLabs credits'
         required: true
         default: true
         type: boolean
@@ -29,9 +39,11 @@ jobs:
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           MONUMENT_ID: ${{ inputs.monument_id }}
+          LANGUAGE: ${{ inputs.language }}
           DRY_RUN: ${{ inputs.dry_run }}
+        shell: bash
         run: |
-          args=()
+          args=(--language "$LANGUAGE")
           if [ -n "$MONUMENT_ID" ]; then args+=(--only "$MONUMENT_ID"); fi
           if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
           python scripts/generate_audio.py "${args[@]}"
@@ -39,7 +51,8 @@ jobs:
         if: ${{ !inputs.dry_run }}
         uses: actions/upload-artifact@v4
         with:
-          name: archispotter-audioguides
+          name: archispotter-audioguides-${{ inputs.language }}
           path: audio/*.mp3
           if-no-files-found: error
           retention-days: 30
+
