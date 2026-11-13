@@ -13,7 +13,7 @@ import urllib.request
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 VOICES = {
     "en": "zzAIcrq5pp7webLI6ptl",  # Maya
-    "it": "Dl7eCteSx0r4bKkraGGE",  # Michele
+    "it": "nH7uLS5UdEnvKEOAXtlQ",  # Vittorio
     "es": "7nCYbNPCi8RLAKVnYEoO",  # Luisa
 }
 
