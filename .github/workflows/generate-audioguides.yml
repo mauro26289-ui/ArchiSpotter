@@ -1,0 +1,45 @@
+name: Generate ArchiSpotter audioguides
+
+on:
+  workflow_dispatch:
+    inputs:
+      monument_id:
+        description: 'Monument ID, e.g. colosseum; leave blank for all available scripts'
+        required: false
+        type: string
+      dry_run:
+        description: 'Preview without using ElevenLabs credits'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate audio
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          MONUMENT_ID: ${{ inputs.monument_id }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          args=()
+          if [ -n "$MONUMENT_ID" ]; then args+=(--only "$MONUMENT_ID"); fi
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          python scripts/generate_audio.py "${args[@]}"
+      - name: Upload generated MP3s
+        if: ${{ !inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: archispotter-audioguides
+          path: audio/*.mp3
+          if-no-files-found: error
+          retention-days: 30
