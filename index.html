@@ -2352,6 +2352,10 @@ body.archi-intro-active { background-color:#f8f0de !important; }
         // Never replace curated photos with another photo provider.
         function handleMonumentImageError(img) {
             if (!img || img.dataset.fallbackDone === 'true') return;
+            if ((img.getAttribute('src') || '').startsWith('data:image/')) {
+                img.dataset.fallbackDone = 'true';
+                return;
+            }
             const original = img.dataset.originalPhoto || img.getAttribute('src') || '';
             if (!img.dataset.originalPhoto && original.startsWith('https://images.unsplash.com/')) {
                 img.dataset.originalPhoto = original;
@@ -4627,7 +4631,15 @@ for (const monument of initialMonumentsData) {
 
         function initSmartMap() {
             const el = document.getElementById('smart-map');
-            if (!el || !window.L || smartMap) return;
+            if (!el || smartMap) return;
+            if (!window.L) {
+                const status = document.getElementById('map-status-text');
+                if (status) status.textContent = 'El mapa no está disponible. Comprobá la conexión e intentá nuevamente.';
+                el.setAttribute('role', 'status');
+                el.textContent = 'No se pudo cargar el mapa. Revisá tu conexión y volvé a abrir esta pestaña.';
+                return;
+            }
+            el.textContent = '';
             // One world only: do not duplicate tiles or markers across the antimeridian.
             // Limit latitude to the usable Web Mercator extent; allow the full longitude range.
             const worldBounds = L.latLngBounds([[-85.05112878, -180], [85.05112878, 180]]);
@@ -4639,16 +4651,39 @@ for (const monument of initialMonumentsData) {
                 minZoom: 1,
                 zoomSnap: 0.25
             }).setView([43.2, 10.5], 4);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            const archiTiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 noWrap: true,
                 bounds: worldBounds,
-                attribution: '&copy; OpenStreetMap'
-            }).addTo(smartMap);
+                attribution: '&copy; OpenStreetMap contributors'
+            });
+            let archiTileFailures = 0;
+            archiTiles.on('tileerror', function () {
+                archiTileFailures++;
+                if (archiTileFailures >= 3) {
+                    const status = document.getElementById('map-status-text');
+                    if (status) status.textContent = 'Algunas partes del mapa no cargaron. Los monumentos siguen disponibles; comprobá tu conexión.';
+                }
+            });
+            archiTiles.on('tileload', function () {
+                archiTileFailures = 0;
+            });
+            archiTiles.addTo(smartMap);
             L.control.zoom({ position: 'bottomright' }).addTo(smartMap);
             addSmartMapMarkers();
             setTimeout(() => smartMap.invalidateSize(), 300);
         }
+
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden && smartMap && currentTab === 'map') {
+                setTimeout(function () { if (smartMap) smartMap.invalidateSize(); }, 150);
+            }
+        });
+        window.addEventListener('online', function () {
+            if (smartMap && currentTab === 'map') {
+                smartMap.invalidateSize();
+            }
+        });
 
         function addSmartMapMarkers(query = '') {
             if (!smartMap || !window.L) return;
