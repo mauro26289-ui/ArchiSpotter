@@ -672,6 +672,16 @@ body.archi-intro-active { background-color:#f8f0de !important; }
  #splash-screen { min-height:100svh !important; }
 }
 </style>
+
+<style id="archi-modal-stacking-fix-20261115">
+/* Los controles Leaflet y los paneles del mapa usan z-index 500.
+   La ficha debe permanecer por encima de TODOS esos controles. */
+#monument-modal:not(.hidden) {
+  z-index: 1200 !important;
+  isolation: isolate;
+}
+#monument-modal:not(.hidden) > div { position: relative; z-index: 1; }
+</style>
 </head>
 <body class="archi-intro-active light-mode h-full flex flex-col font-sans bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950">
 
@@ -2386,6 +2396,29 @@ body.archi-intro-active { background-color:#f8f0de !important; }
         }, true);
 
 
+
+        // Recuperación conservadora de fotos Unsplash al volver la conexión.
+        // Solo intenta imágenes visibles con respaldo, una vez por elemento.
+        // No altera imágenes curadas ni cambia de proveedor.
+        function archiRecoverVisiblePhotos() {
+            if (!navigator.onLine) return;
+            document.querySelectorAll('img.image-placeholder[data-original-photo]').forEach(function(img) {
+                if (!img.isConnected || img.dataset.onlineRecoveryTried === 'true') return;
+                const rect = img.getBoundingClientRect();
+                if (rect.width <= 0 || rect.height <= 0 || rect.bottom < 0 || rect.top > window.innerHeight) return;
+                const original = img.dataset.originalPhoto;
+                if (!original || !original.startsWith('https://images.unsplash.com/')) return;
+                img.dataset.onlineRecoveryTried = 'true';
+                img.dataset.fallbackDone = 'false';
+                img.dataset.photoAttempt = '0';
+                img.classList.remove('image-placeholder');
+                img.src = original;
+            });
+        }
+        window.addEventListener('online', archiRecoverVisiblePhotos);
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) archiRecoverVisiblePhotos();
+        });
 
         // Free Wikimedia article thumbnails. Only new monuments are affected;
         // original 45 retain their curated images unchanged.
