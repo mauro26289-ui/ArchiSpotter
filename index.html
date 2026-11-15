@@ -681,6 +681,12 @@ body.archi-intro-active { background-color:#f8f0de !important; }
   isolation: isolate;
 }
 #monument-modal:not(.hidden) > div { position: relative; z-index: 1; }
+
+/* La galería de fotos es una capa superior a la ficha (1200) y al mapa. */
+#fullscreen-lightbox:not(.hidden) {
+  z-index: 1300 !important;
+  isolation: isolate;
+}
 </style>
 </head>
 <body class="archi-intro-active light-mode h-full flex flex-col font-sans bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950">
