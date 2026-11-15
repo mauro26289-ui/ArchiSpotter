@@ -688,6 +688,18 @@ body.archi-intro-active { background-color:#f8f0de !important; }
   isolation: isolate;
 }
 </style>
+<style id="archi-lightbox-portal-fix">
+/* El visor se mueve a body al abrirse: no queda atrapado dentro de #app. */
+body > #fullscreen-lightbox:not(.hidden) {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    z-index: 2147483647 !important;
+    isolation: isolate;
+}
+</style>
 </head>
 <body class="archi-intro-active light-mode h-full flex flex-col font-sans bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950">
 
@@ -4086,7 +4098,13 @@ for (const monument of initialMonumentsData) {
             updateLightboxView();
             initLightboxInteractions();
 
-            document.getElementById('fullscreen-lightbox').classList.remove('hidden');
+            const lightbox = document.getElementById('fullscreen-lightbox');
+            // Sacar el visor del contenedor #app (overflow:hidden y contextos de apilamiento).
+            // Así queda por encima de la ficha y del mapa, incluso en Safari para iPhone.
+            if (lightbox && lightbox.parentElement !== document.body) {
+                document.body.appendChild(lightbox);
+            }
+            if (lightbox) lightbox.classList.remove('hidden');
         }
 
         function closeFullscreenLightbox() {
