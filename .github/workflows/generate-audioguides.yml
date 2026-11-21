@@ -3,6 +3,14 @@ name: Generate ArchiSpotter audioguides
 on:
   workflow_dispatch:
     inputs:
+      script_batch:
+        description: 'Choose existing scripts or the five new monument guides'
+        required: true
+        type: choice
+        default: existing
+        options:
+          - existing
+          - batch-02-five-monuments
       monument_id:
         description: 'Monument ID (e.g. pantheon); leave blank for all scripts'
         required: false
@@ -38,12 +46,16 @@ jobs:
       - name: Generate audio
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          SCRIPT_BATCH: ${{ inputs.script_batch }}
           MONUMENT_ID: ${{ inputs.monument_id }}
           LANGUAGE: ${{ inputs.language }}
           DRY_RUN: ${{ inputs.dry_run }}
         shell: bash
         run: |
           args=(--language "$LANGUAGE")
+          if [ "$SCRIPT_BATCH" = "batch-02-five-monuments" ]; then
+            args+=(--input narrations/batch-02-five-monuments.json)
+          fi
           if [ -n "$MONUMENT_ID" ]; then args+=(--only "$MONUMENT_ID"); fi
           if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
           python scripts/generate_audio.py "${args[@]}"
